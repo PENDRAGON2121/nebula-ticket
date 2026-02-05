@@ -14,7 +14,8 @@ import {
   SquareTerminal,
   Ticket,
   LayoutDashboard,
-  LogOut
+  LogOut,
+  ExternalLink
 } from "lucide-react"
 
 import {
@@ -81,7 +82,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith("/asignaciones")}>
+                    <Link href="/asignaciones">
+                        <BookOpen />
+                        <span>Asignaciones</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+           <SidebarGroupLabel>Ecosistema</SidebarGroupLabel>
+           <SidebarMenu>
+             <SidebarMenuItem>
+               <SidebarMenuButton asChild>
+                 <a href={process.env.NEXT_PUBLIC_NEBULA_ASSETS_URL || "#"} target="_blank" rel="noopener noreferrer">
+                   <ExternalLink />
+                   <span>Nebula Assets</span>
+                 </a>
+               </SidebarMenuButton>
+             </SidebarMenuItem>
+           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>

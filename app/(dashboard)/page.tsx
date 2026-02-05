@@ -1,7 +1,83 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Ticket, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import prisma from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { formatDistanceToNow } from "date-fns"
+import { es } from "date-fns/locale"
+import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
 
-export default function Page() {
+async function getDashboardData() {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
+  // Execute independent queries in parallel
+  const [
+    openCount,
+    inProgressCount,
+    resolvedCount,
+    criticalCount,
+    recentActivity,
+    myAssignments
+  ] = await Promise.all([
+    // 1. Open Tickets
+    prisma.ticket.count({
+      where: { status: "ABIERTO" }
+    }),
+    // 2. In Progress
+    prisma.ticket.count({
+      where: { status: "EN_PROGRESO" }
+    }),
+    // 3. Resolved (This Month)
+    prisma.ticket.count({
+      where: {
+        status: { in: ["RESUELTO", "CERRADO"] },
+        updatedAt: {
+          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+        }
+      }
+    }),
+    // 4. Critical Tickets
+    prisma.ticket.count({
+      where: { status: "ABIERTO", prioridad: "CRITICA" }
+    }),
+    // 5. Recent Activity (Last 5 tickets created or updated)
+    prisma.ticket.findMany({
+      take: 5,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        creadoPor: { select: { name: true } },
+        asignadoA: { select: { name: true } }
+      }
+    }),
+    // 6. My Assignments
+    prisma.ticket.findMany({
+      where: {
+        asignadoAId: session.user.id,
+        status: { notIn: ["RESUELTO", "CERRADO"] }
+      },
+      take: 5,
+      orderBy: { prioridad: "desc" } // Show Critical/High first
+    })
+  ])
+
+  return {
+    stats: {
+      open: openCount,
+      inProgress: inProgressCount,
+      resolvedMonth: resolvedCount,
+      critical: criticalCount
+    },
+    recentActivity,
+    myAssignments
+  }
+}
+
+export default async function Page() {
+  const data = await getDashboardData()
+
+  if (!data) return <div>No autorizado</div>
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -13,9 +89,9 @@ export default function Page() {
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{data.stats.open}</div>
             <p className="text-xs text-muted-foreground">
-              +2 desde la última hora
+              Total activos en cola
             </p>
           </CardContent>
         </Card>
@@ -27,9 +103,9 @@ export default function Page() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{data.stats.inProgress}</div>
             <p className="text-xs text-muted-foreground">
-              3 técnicos activos
+              Siendo atendidos ahora
             </p>
           </CardContent>
         </Card>
@@ -41,21 +117,21 @@ export default function Page() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">145</div>
+            <div className="text-2xl font-bold">{data.stats.resolvedMonth}</div>
             <p className="text-xs text-muted-foreground">
-              +19% respecto al mes anterior
+              Incidencias cerradas este mes
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Críticos
+              Críticos Abiertos
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">2</div>
+            <div className="text-2xl font-bold text-destructive">{data.stats.critical}</div>
             <p className="text-xs text-muted-foreground">
               Requieren atención inmediata
             </p>
@@ -69,28 +145,27 @@ export default function Page() {
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-                {/* Mock data */}
-                <div className="flex items-center">
-                    <div className="space-y-1">
-                        <p className="text-sm font-medium leading-none">Ticket #1234 - Laptop no enciende</p>
-                        <p className="text-sm text-muted-foreground">Juan Perez actualizó el estado a En Progreso</p>
+                {data.recentActivity.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No hay actividad reciente.</div>
+                ) : (
+                  data.recentActivity.map((ticket) => (
+                    <div className="flex items-center" key={ticket.id}>
+                        <div className="space-y-1">
+                            <Link href={`/tickets/${ticket.id}`} className="hover:underline">
+                              <p className="text-sm font-medium leading-none">
+                                {ticket.titulo}
+                              </p>
+                            </Link>
+                            <p className="text-xs text-muted-foreground">
+                                {ticket.status.replace("_", " ")} • Asignado a: {ticket.asignadoA?.name || "Sin asignar"}
+                            </p>
+                        </div>
+                        <div className="ml-auto text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(ticket.updatedAt), { addSuffix: true, locale: es })}
+                        </div>
                     </div>
-                    <div className="ml-auto font-medium">Hace 5m</div>
-                </div>
-                <div className="flex items-center">
-                    <div className="space-y-1">
-                        <p className="text-sm font-medium leading-none">Ticket #1233 - Solicitud de acceso</p>
-                        <p className="text-sm text-muted-foreground">Maria Garcia creó un nuevo ticket</p>
-                    </div>
-                    <div className="ml-auto font-medium">Hace 15m</div>
-                </div>
-                 <div className="flex items-center">
-                    <div className="space-y-1">
-                        <p className="text-sm font-medium leading-none">Ticket #1230 - Impresora atascada</p>
-                        <p className="text-sm text-muted-foreground">Carlos Ruiz cerró el ticket</p>
-                    </div>
-                    <div className="ml-auto font-medium">Hace 1h</div>
-                </div>
+                  ))
+                )}
             </div>
           </CardContent>
         </Card>
@@ -100,18 +175,27 @@ export default function Page() {
             </CardHeader>
              <CardContent>
                 <div className="space-y-8">
-                     <div className="flex items-center">
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium leading-none">Cambio de toner</p>
-                            <p className="text-sm text-muted-foreground">Alta Prioridad</p>
+                    {data.myAssignments.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">No tienes tickets asignados.</div>
+                    ) : (
+                      data.myAssignments.map((ticket) => (
+                        <div className="flex items-center justify-between" key={ticket.id}>
+                            <div className="space-y-1">
+                                <Link href={`/tickets/${ticket.id}`} className="hover:underline">
+                                  <p className="text-sm font-medium leading-none truncate max-w-[180px]">
+                                    {ticket.titulo}
+                                  </p>
+                                </Link>
+                                <p className="text-xs text-muted-foreground">
+                                  {ticket.status.replace("_", " ")}
+                                </p>
+                            </div>
+                            <Badge variant={ticket.prioridad === "CRITICA" || ticket.prioridad === "ALTA" ? "destructive" : "secondary"}>
+                              {ticket.prioridad}
+                            </Badge>
                         </div>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium leading-none">Instalación Office</p>
-                            <p className="text-sm text-muted-foreground">Baja Prioridad</p>
-                        </div>
-                    </div>
+                      ))
+                    )}
                 </div>
              </CardContent>
         </Card>

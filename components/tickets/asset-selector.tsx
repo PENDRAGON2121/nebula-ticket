@@ -32,9 +32,10 @@ interface Asset {
 interface AssetSelectorProps {
   value?: string
   onChange: (value: string) => void
+  onlyAvailable?: boolean
 }
 
-export function AssetSelector({ value, onChange }: AssetSelectorProps) {
+export function AssetSelector({ value, onChange, onlyAvailable = false }: AssetSelectorProps) {
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState("")
   const [assets, setAssets] = React.useState<Asset[]>([])
@@ -50,7 +51,7 @@ export function AssetSelector({ value, onChange }: AssetSelectorProps) {
         return
     }
     setLoading(true)
-    const results = await searchAssets(term)
+    const results = await searchAssets(term, onlyAvailable)
     // @ts-ignore: Enum mismatch possible but we just need display strings
     setAssets(results)
     setLoading(false)
@@ -70,7 +71,7 @@ export function AssetSelector({ value, onChange }: AssetSelectorProps) {
           className="w-full justify-between"
         >
           {value
-            ? selectedAsset?.nombre || "Activo seleccionado (ID oculto)" // Simplification: in real app, might want to store the whole object or fetch by ID
+            ? selectedAsset?.nombre || "Activo seleccionado (ID oculto)" 
             : "Buscar activo..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

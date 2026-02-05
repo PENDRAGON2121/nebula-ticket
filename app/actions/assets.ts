@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 
-export async function searchAssets(query: string) {
+export async function searchAssets(query: string, onlyAvailable: boolean = false) {
   const session = await auth()
   if (!session?.user) {
     return []
@@ -14,14 +14,20 @@ export async function searchAssets(query: string) {
   }
 
   try {
+    const whereClause: any = {
+      OR: [
+        { nombre: { contains: query, mode: 'insensitive' } },
+        { serial: { contains: query, mode: 'insensitive' } },
+        { codigoInterno: { contains: query, mode: 'insensitive' } },
+      ]
+    }
+
+    if (onlyAvailable) {
+      whereClause.estado = "DISPONIBLE"
+    }
+
     const assets = await prisma.activo.findMany({
-      where: {
-        OR: [
-          { nombre: { contains: query, mode: 'insensitive' } },
-          { serial: { contains: query, mode: 'insensitive' } },
-          { codigoInterno: { contains: query, mode: 'insensitive' } },
-        ]
-      },
+      where: whereClause,
       take: 10,
       select: {
         id: true,

@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+import Link from "next/link"
+
 // This type is roughly what we expect from Prisma, including relations
 export type TicketWithRelations = {
   id: string
@@ -118,13 +120,11 @@ export const columns: ColumnDef<TicketWithRelations>[] = [
               Copiar ID del Ticket
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver detalles
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar estado
+            <DropdownMenuItem asChild>
+                <Link href={`/tickets/${ticket.id}`}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver detalles
+                </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

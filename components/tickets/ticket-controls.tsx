@@ -7,10 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useState, useTransition } from "react"
+import { Badge } from "@/components/ui/badge"
 import { updateTicketStatus, updateTicketPriority } from "@/app/actions/ticket-details"
 import { TicketStatus, TicketPriority } from "@prisma/client"
-import { useTransition } from "react"
-import { Badge } from "@/components/ui/badge"
 
 interface TicketStatusSelectorProps {
   ticketId: string
@@ -19,15 +19,22 @@ interface TicketStatusSelectorProps {
 
 export function TicketStatusSelector({ ticketId, status }: TicketStatusSelectorProps) {
   const [isPending, startTransition] = useTransition()
+  const [localStatus, setLocalStatus] = useState<TicketStatus>(status)
 
   const handleValueChange = (value: string) => {
+    const newStatus = value as TicketStatus
+    setLocalStatus(newStatus)
     startTransition(async () => {
-      await updateTicketStatus(ticketId, value as TicketStatus)
+      const result = await updateTicketStatus(ticketId, newStatus)
+      if (result.error) {
+        // Revert on error (optional, but good practice)
+        setLocalStatus(status)
+      }
     })
   }
 
   return (
-    <Select defaultValue={status} onValueChange={handleValueChange} disabled={isPending}>
+    <Select value={localStatus} onValueChange={handleValueChange} disabled={isPending}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Estado" />
       </SelectTrigger>
@@ -49,15 +56,21 @@ interface TicketPrioritySelectorProps {
 
 export function TicketPrioritySelector({ ticketId, priority }: TicketPrioritySelectorProps) {
   const [isPending, startTransition] = useTransition()
+  const [localPriority, setLocalPriority] = useState<TicketPriority>(priority)
 
   const handleValueChange = (value: string) => {
+    const newPriority = value as TicketPriority
+    setLocalPriority(newPriority)
     startTransition(async () => {
-      await updateTicketPriority(ticketId, value as TicketPriority)
+      const result = await updateTicketPriority(ticketId, newPriority)
+      if (result.error) {
+         setLocalPriority(priority)
+      }
     })
   }
 
   return (
-    <Select defaultValue={priority} onValueChange={handleValueChange} disabled={isPending}>
+    <Select value={localPriority} onValueChange={handleValueChange} disabled={isPending}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Prioridad" />
       </SelectTrigger>
