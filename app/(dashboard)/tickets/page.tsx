@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import Link from "next/link"
 
 async function getTickets() {
   const tickets = await prisma.ticket.findMany({
@@ -40,9 +41,11 @@ export default async function TicketsPage() {
                 <h1 className="text-2xl font-bold tracking-tight">Tickets de Soporte</h1>
                 <p className="text-muted-foreground">Gestiona y asigna incidencias técnicas.</p>
             </div>
-            <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo Ticket
+            <Button asChild>
+                <Link href="/tickets/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nuevo Ticket
+                </Link>
             </Button>
         </div>
         
