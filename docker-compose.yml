@@ -1,0 +1,20 @@
+services:
+  nebula-ticket:
+    container_name: nebula-ticket
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "${APP_PORT:-3001}:3000"
+    environment:
+      - DATABASE_URL
+      - POSTGRES_PRISMA_URL
+      - POSTGRES_URL_NON_POOLING
+      - AUTH_SECRET
+      - NEXT_PUBLIC_NEBULA_ASSETS_URL
+      - APP_URL
+      - AUTH_TRUST_HOST
+      - AUTH_URL
+    env_file:
+      - .env

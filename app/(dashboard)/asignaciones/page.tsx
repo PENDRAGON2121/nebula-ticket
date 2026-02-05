@@ -19,7 +19,7 @@ export default async function DispatchPage() {
     <div className="flex flex-col gap-4 h-full">
         <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Despacho de Tickets</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Asignación de Tickets</h1>
                 <p className="text-muted-foreground">Asigna tickets pendientes a los agentes técnicos disponibles.</p>
             </div>
         </div>
