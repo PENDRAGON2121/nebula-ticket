@@ -2,18 +2,19 @@ import { auth } from "@/lib/auth"
 
 export async function hasPermission(permission: string): Promise<boolean> {
   const session = await auth()
-  if (!session?.user?.permissions) return false
-  return session.user.permissions.includes(permission)
+  const perms = (session?.user as any)?.permissions
+  if (!perms) return false
+  return perms.includes(permission)
 }
 
 export async function isAdmin(): Promise<boolean> {
   const session = await auth()
-  return session?.user?.role === 'ADMIN'
+  return (session?.user as any)?.role === 'ADMIN'
 }
 
 export async function isAgent(): Promise<boolean> {
   const session = await auth()
-  return session?.user?.role === 'AGENTE'
+  return (session?.user as any)?.role === 'AGENTE'
 }
 
 export async function canEditTicket(): Promise<boolean> {
