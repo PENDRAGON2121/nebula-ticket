@@ -20,5 +20,7 @@ services:
       - APP_URL
       - AUTH_TRUST_HOST
       - AUTH_URL
+    volumes:
+      - ./public/uploads:/app/public/uploads
     env_file:
       - .env
