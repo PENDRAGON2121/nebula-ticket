@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Nebula Tickets",
   description: "Sistema de gestión de incidencias",
+  icons: {
+    icon: "/Nebula.ico",
+  },
 };
 
 export default function RootLayout({
