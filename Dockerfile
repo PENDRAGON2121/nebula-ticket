@@ -25,7 +25,7 @@ ARG POSTGRES_PRISMA_URL
 ARG POSTGRES_URL_NON_POOLING
 ARG NEXT_PUBLIC_NEBULA_ASSETS_URL
 
-# Set environment variables for build time (needed for Prisma and Next.js static generation)
+# Set environment variables for build time
 ENV POSTGRES_PRISMA_URL=$POSTGRES_PRISMA_URL
 ENV POSTGRES_URL_NON_POOLING=$POSTGRES_URL_NON_POOLING
 ENV NEXT_PUBLIC_NEBULA_ASSETS_URL=$NEXT_PUBLIC_NEBULA_ASSETS_URL
@@ -34,18 +34,18 @@ ENV NEXT_PUBLIC_NEBULA_ASSETS_URL=$NEXT_PUBLIC_NEBULA_ASSETS_URL
 RUN pnpm prisma generate
 
 # Build Next.js
-# Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN pnpm build
 
-# Production image, copy all the files and run next
-FROM base AS runner
-# Install openssl and ca-certificates for Prisma and SSL connections
-RUN apk add --no-cache openssl ca-certificates
+# Production image - Switched to debian-slim to fix Prisma SSL/DNS issues in Alpine
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+
+# Install OpenSSL for Prisma (Debian uses apt-get)
+RUN apt-get update -y && apt-get install -y openssl ca-certificates
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -53,7 +53,6 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 
 # Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
@@ -62,7 +61,6 @@ USER nextjs
 EXPOSE 3000
 
 ENV PORT 3000
-# set hostname to localhost
 ENV HOSTNAME "0.0.0.0"
 
 CMD ["node", "server.js"]
