@@ -40,8 +40,8 @@ RUN pnpm build
 
 # Production image, copy all the files and run next
 FROM base AS runner
-# Install openssl for Prisma
-RUN apk add --no-cache openssl
+# Install openssl and ca-certificates for Prisma and SSL connections
+RUN apk add --no-cache openssl ca-certificates
 WORKDIR /app
 
 ENV NODE_ENV production
