@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/popover"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { assignTicket } from "@/app/actions/dispatch"
-import { useToast } from "@/hooks/use-toast" // Assume we'll create/fix this hook or use alert for now if missing
 
 interface Agent {
   id: string
