@@ -20,6 +20,16 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build args
+ARG POSTGRES_PRISMA_URL
+ARG POSTGRES_URL_NON_POOLING
+ARG NEXT_PUBLIC_NEBULA_ASSETS_URL
+
+# Set environment variables for build time (needed for Prisma and Next.js static generation)
+ENV POSTGRES_PRISMA_URL=$POSTGRES_PRISMA_URL
+ENV POSTGRES_URL_NON_POOLING=$POSTGRES_URL_NON_POOLING
+ENV NEXT_PUBLIC_NEBULA_ASSETS_URL=$NEXT_PUBLIC_NEBULA_ASSETS_URL
+
 # Generate Prisma Client
 RUN pnpm prisma generate
 

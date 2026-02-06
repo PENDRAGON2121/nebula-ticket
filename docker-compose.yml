@@ -4,6 +4,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        POSTGRES_PRISMA_URL: ${POSTGRES_PRISMA_URL}
+        POSTGRES_URL_NON_POOLING: ${POSTGRES_URL_NON_POOLING}
+        NEXT_PUBLIC_NEBULA_ASSETS_URL: ${NEXT_PUBLIC_NEBULA_ASSETS_URL}
     restart: always
     ports:
       - "${APP_PORT:-3001}:3000"
