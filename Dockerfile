@@ -1,10 +1,11 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
+
+# Install OpenSSL (needed for Prisma on some systems, good to have)
+RUN apt-get update -y && apt-get install -y openssl
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -30,21 +31,21 @@ ENV POSTGRES_PRISMA_URL=$POSTGRES_PRISMA_URL
 ENV POSTGRES_URL_NON_POOLING=$POSTGRES_URL_NON_POOLING
 ENV NEXT_PUBLIC_NEBULA_ASSETS_URL=$NEXT_PUBLIC_NEBULA_ASSETS_URL
 
-# Generate Prisma Client
+# Generate Prisma Client (Will now generate for debian-openssl-3.0.x automatically)
 RUN pnpm prisma generate
 
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN pnpm build
 
-# Production image - Switched to debian-slim to fix Prisma SSL/DNS issues in Alpine
+# Production image
 FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install OpenSSL for Prisma (Debian uses apt-get)
+# Install OpenSSL and CA certificates for Prisma and SSL connections
 RUN apt-get update -y && apt-get install -y openssl ca-certificates
 
 RUN addgroup --system --gid 1001 nodejs
