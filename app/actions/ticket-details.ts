@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { TicketStatus, TicketPriority } from "@prisma/client"
+import { canViewInternalComments } from "@/lib/permissions"
 
 export async function addComment(ticketId: string, content: string, interno: boolean = false) {
   const session = await auth()
@@ -11,7 +12,10 @@ export async function addComment(ticketId: string, content: string, interno: boo
   if (!session?.user?.id) {
     return { error: "No autorizado" }
   }
-
+  // Si el comentario es interno, verificar permiso
+  if (interno && !(await canViewInternalComments())) {
+    return { error: "No tienes permiso para comentarios internos" }
+  }
   if (!content || content.trim().length === 0) {
     return { error: "El comentario no puede estar vacío" }
   }

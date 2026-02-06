@@ -4,7 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, Eye, Pencil } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Eye, Pencil, Trash2, UserCheck } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,7 @@ export type TicketWithRelations = {
   createdAt: Date
 }
 
-export const columns: ColumnDef<TicketWithRelations>[] = [
+export const columns: ColumnDef<TicketWithRelations & { isMine?: boolean; canEdit?: boolean; canDelete?: boolean; createdAt: Date }>[] = [
   {
     accessorKey: "titulo",
     header: ({ column }) => {
@@ -88,8 +88,8 @@ export const columns: ColumnDef<TicketWithRelations>[] = [
     header: "Asignado",
     cell: ({ row }) => {
       const user = row.original.asignadoA
+      const isMine = row.original.isMine
       if (!user) return <span className="text-muted-foreground text-sm">Sin asignar</span>
-      
       return (
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
@@ -97,6 +97,7 @@ export const columns: ColumnDef<TicketWithRelations>[] = [
             <AvatarFallback>{user.name?.slice(0,2).toUpperCase() || "U"}</AvatarFallback>
           </Avatar>
           <span className="text-sm">{user.name || user.email}</span>
+          {isMine && <Badge variant="secondary" className="ml-2"><UserCheck className="w-3 h-3 mr-1" />Asignado a mí</Badge>}
         </div>
       )
     },
@@ -105,7 +106,6 @@ export const columns: ColumnDef<TicketWithRelations>[] = [
     id: "actions",
     cell: ({ row }) => {
       const ticket = row.original
- 
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -126,6 +126,16 @@ export const columns: ColumnDef<TicketWithRelations>[] = [
                     Ver detalles
                 </Link>
             </DropdownMenuItem>
+            {ticket.canEdit && (
+              <DropdownMenuItem>
+                <Pencil className="mr-2 h-4 w-4" />Editar
+              </DropdownMenuItem>
+            )}
+            {ticket.canDelete && (
+              <DropdownMenuItem className="text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />Eliminar
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )

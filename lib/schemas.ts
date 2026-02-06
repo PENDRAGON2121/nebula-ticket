@@ -12,3 +12,14 @@ export const createTicketSchema = z.object({
 })
 
 export type CreateTicketValues = z.infer<typeof createTicketSchema>
+
+export const updateTicketSchema = z.object({
+  titulo: z.string().min(5).optional(),
+  descripcion: z.string().min(10).optional(),
+  prioridad: z.enum(["BAJA", "MEDIA", "ALTA", "CRITICA"]).optional(),
+  status: z.enum(["ABIERTO", "EN_PROGRESO", "ESPERA_CLIENTE", "RESUELTO", "CERRADO"]).optional(),
+  asignadoAId: z.string().optional().nullable(),
+  activoId: z.string().optional().nullable(),
+})
+
+export type UpdateTicketData = z.infer<typeof updateTicketSchema>

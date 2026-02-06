@@ -10,6 +10,9 @@ import { CommentList } from "@/components/tickets/comment-list"
 import { CommentForm } from "@/components/tickets/comment-form"
 import { TicketStatusSelector, TicketPrioritySelector } from "@/components/tickets/ticket-controls"
 import { Laptop, User, Calendar, AlertCircle } from "lucide-react"
+import { getTicketHistory } from "@/app/actions/ticket-history"
+import { canEditTicket, canDeleteTicket, canViewInternalComments } from "@/lib/permissions"
+import { TicketHistory } from "@/components/tickets/ticket-history"
 
 interface TicketPageProps {
   params: {
@@ -40,13 +43,22 @@ async function getTicket(id: string) {
 }
 
 export default async function TicketDetailPage({ params }: TicketPageProps) {
-  const { id } = await params
-  const ticket = await getTicket(id)
-
+  const { id } = params
+  const [ticket, history, canEdit, canDelete, canViewInternal] = await Promise.all([
+    getTicket(id),
+    getTicketHistory(id),
+    canEditTicket(),
+    canDeleteTicket(),
+    canViewInternalComments(),
+  ])
   if (!ticket) {
     notFound()
   }
-
+  // Convertir createdAt a string para el componente TicketHistory
+  const historyForComponent = history.map(h => ({
+    ...h,
+    createdAt: h.createdAt instanceof Date ? h.createdAt.toISOString() : h.createdAt,
+  }))
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
       {/* Main Content: Details & Comments */}
@@ -74,15 +86,17 @@ export default async function TicketDetailPage({ params }: TicketPageProps) {
         </Card>
 
         <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">Actividad</CardTitle>
-                <CardDescription>Comentarios y actualizaciones del caso.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <CommentList comments={ticket.comentarios} />
-                <Separator className="my-6" />
-                <CommentForm ticketId={ticket.id} />
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="text-lg">Actividad</CardTitle>
+            <CardDescription>Comentarios y actualizaciones del caso.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CommentList comments={ticket.comentarios} canViewInternal={canViewInternal} />
+            <Separator className="my-6" />
+            <CommentForm ticketId={ticket.id} />
+            <Separator className="my-6" />
+            <TicketHistory history={historyForComponent} />
+          </CardContent>
         </Card>
       </div>
 

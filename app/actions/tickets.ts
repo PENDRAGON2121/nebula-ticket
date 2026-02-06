@@ -2,9 +2,10 @@
 
 import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
-import { createTicketSchema } from "@/lib/schemas"
+import { createTicketSchema, updateTicketSchema, type UpdateTicketData } from "@/lib/schemas"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { canViewAllTickets, canEditTicket, canDeleteTicket } from "@/lib/permissions"
 
 export async function createTicket(prevState: any, formData: FormData) {
   const session = await auth()
@@ -55,4 +56,117 @@ export async function createTicket(prevState: any, formData: FormData) {
 
   revalidatePath("/tickets")
   redirect("/tickets")
+}
+
+export async function getTickets({
+  assignedToMe,
+  estado,
+  prioridad,
+  search,
+  userId,
+  sessionUserId,
+}: {
+  assignedToMe?: boolean
+  estado?: string
+  prioridad?: string
+  search?: string
+  userId?: string
+  sessionUserId?: string
+}) {
+  const session = await auth()
+  if (!session?.user?.id) return []
+
+  const isAdminOrAgent = await canViewAllTickets()
+
+  // Filtro base: soft delete
+  const where: any = { deletedAt: null }
+
+  // Permisos: ADMIN/AGENTE ven todos, USUARIO solo sus tickets
+  if (!isAdminOrAgent) {
+    where.creadoPorId = session.user.id
+  }
+
+  // Filtro: asignado a mí
+  if (assignedToMe) {
+    where.asignadoAId = session.user.id
+  }
+
+  // Filtro: estado
+  if (estado) {
+    where.status = estado
+  }
+
+  // Filtro: prioridad
+  if (prioridad) {
+    where.prioridad = prioridad
+  }
+
+  // Filtro: búsqueda
+  if (search) {
+    where.OR = [
+      { titulo: { contains: search, mode: "insensitive" } },
+      { descripcion: { contains: search, mode: "insensitive" } },
+    ]
+  }
+
+  return prisma.ticket.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: {
+      asignadoA: { select: { id: true, name: true, image: true, email: true } },
+      creadoPor: { select: { id: true, name: true, image: true } },
+      activo: { select: { id: true, nombre: true } },
+    },
+  })
+}
+
+export async function updateTicket(ticketId: string, data: UpdateTicketData) {
+  const session = await auth()
+  if (!session?.user?.id || !(await canEditTicket())) {
+    throw new Error("No autorizado")
+  }
+
+  // Validar datos
+  const validated = updateTicketSchema.safeParse(data)
+  if (!validated.success) {
+    throw new Error("Datos inválidos")
+  }
+
+  // Obtener ticket actual
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } })
+  if (!ticket) throw new Error("Ticket no encontrado")
+
+  // Registrar historial de cambios
+  const changes = Object.entries(validated.data).filter(([k, v]) => v !== (ticket as any)[k])
+  for (const [field, newValue] of changes) {
+    await prisma.ticketHistory.create({
+      data: {
+        ticketId,
+        changedById: session.user.id,
+        fieldName: field,
+        oldValue: (ticket as any)[field]?.toString() ?? null,
+        newValue: newValue?.toString() ?? null,
+      },
+    })
+  }
+
+  // Actualizar ticket
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: validated.data,
+  })
+
+  revalidatePath("/tickets")
+}
+
+export async function deleteTicket(ticketId: string) {
+  const session = await auth()
+  if (!session?.user?.id || !(await canDeleteTicket())) {
+    throw new Error("No autorizado")
+  }
+  await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { deletedAt: new Date() },
+  })
+  revalidatePath("/tickets")
 }

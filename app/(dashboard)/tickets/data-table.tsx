@@ -23,15 +23,25 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { TicketFilters } from "@/components/tickets/ticket-filters"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  filters: {
+    assignedToMe: boolean
+    estado: string
+    prioridad: string
+    search: string
+  }
+  onFiltersChange: (filters: DataTableProps<TData, TValue>["filters"]) => void
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  filters,
+  onFiltersChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -55,6 +65,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
+      <TicketFilters value={filters} onChange={onFiltersChange} />
       <div className="flex items-center py-4">
         <Input
           placeholder="Filtrar por título..."

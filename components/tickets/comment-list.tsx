@@ -6,20 +6,22 @@ import { Lock } from "lucide-react"
 
 interface CommentListProps {
   comments: any[]
+  canViewInternal?: boolean
 }
 
-export function CommentList({ comments }: CommentListProps) {
-  if (comments.length === 0) {
+export function CommentList({ comments, canViewInternal = false }: CommentListProps) {
+  // Filtrar comentarios internos si no tiene permiso
+  const visibleComments = canViewInternal ? comments : comments.filter(c => !c.interno)
+  if (visibleComments.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground text-sm">
         No hay comentarios aún. Sé el primero en escribir algo.
       </div>
     )
   }
-
   return (
     <div className="space-y-6">
-      {comments.map((comment) => (
+      {visibleComments.map((comment) => (
         <div key={comment.id} className="flex gap-4">
           <Avatar className="h-8 w-8 mt-1">
             <AvatarImage src={comment.autor.image} />
