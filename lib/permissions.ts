@@ -43,7 +43,7 @@ export async function canAccessTicket(ticketId: string): Promise<{ allowed: bool
   const session = await auth()
   if (!session?.user?.id) return { allowed: false, ticket: null }
 
-  const ticket = await prisma.ticket.findUnique({
+  const ticket = await prisma.ticket.findFirst({
     where: { id: ticketId, deletedAt: null },
   })
   if (!ticket) return { allowed: false, ticket: null }
@@ -62,7 +62,7 @@ export async function canModifyTicket(ticketId: string): Promise<{ allowed: bool
   const session = await auth()
   if (!session?.user?.id) return { allowed: false, ticket: null }
 
-  const ticket = await prisma.ticket.findUnique({
+  const ticket = await prisma.ticket.findFirst({
     where: { id: ticketId, deletedAt: null },
   })
   if (!ticket) return { allowed: false, ticket: null }

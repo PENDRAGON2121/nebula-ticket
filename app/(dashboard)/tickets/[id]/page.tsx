@@ -16,9 +16,7 @@ import { canEditTicket, canDeleteTicket, canViewInternalComments, canViewAllTick
 import { TicketHistory } from "@/components/tickets/ticket-history"
 
 interface TicketPageProps {
-  params: {
-    id: string
-  }
+  params: Promise<{ id: string }>
 }
 
 async function getTicket(id: string) {
@@ -54,7 +52,7 @@ async function getTicket(id: string) {
 }
 
 export default async function TicketDetailPage({ params }: TicketPageProps) {
-  const { id } = params
+  const { id } = await params
   const [ticket, history, canEdit, canDelete, canViewInternal] = await Promise.all([
     getTicket(id),
     getTicketHistory(id),
