@@ -23,11 +23,11 @@ async function getDashboardData() {
   ] = await Promise.all([
     // 1. Open Tickets
     prisma.ticket.count({
-      where: { status: "ABIERTO" }
+      where: { status: "ABIERTO", deletedAt: null }
     }),
     // 2. In Progress
     prisma.ticket.count({
-      where: { status: "EN_PROGRESO" }
+      where: { status: "EN_PROGRESO", deletedAt: null }
     }),
     // 3. Resolved (This Month)
     prisma.ticket.count({
@@ -35,15 +35,17 @@ async function getDashboardData() {
         status: { in: ["RESUELTO", "CERRADO"] },
         updatedAt: {
           gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-        }
+        },
+        deletedAt: null
       }
     }),
     // 4. Critical Tickets
     prisma.ticket.count({
-      where: { status: "ABIERTO", prioridad: "CRITICA" }
+      where: { status: "ABIERTO", prioridad: "CRITICA", deletedAt: null }
     }),
     // 5. Recent Activity (Last 5 tickets created or updated)
     prisma.ticket.findMany({
+      where: { deletedAt: null },
       take: 5,
       orderBy: { updatedAt: "desc" },
       include: {
@@ -55,7 +57,8 @@ async function getDashboardData() {
     prisma.ticket.findMany({
       where: {
         asignadoAId: session.user.id,
-        status: { notIn: ["RESUELTO", "CERRADO"] }
+        status: { notIn: ["RESUELTO", "CERRADO"] },
+        deletedAt: null
       },
       take: 5,
       orderBy: { prioridad: "desc" } // Show Critical/High first

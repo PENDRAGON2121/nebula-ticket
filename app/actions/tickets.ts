@@ -169,4 +169,5 @@ export async function deleteTicket(ticketId: string) {
     data: { deletedAt: new Date() },
   })
   revalidatePath("/tickets")
+  revalidatePath("/")
 }
