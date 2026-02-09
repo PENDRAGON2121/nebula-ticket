@@ -39,6 +39,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const role = session?.user?.role as string | undefined;
+  const isStaff = role === "ADMIN" || role === "AGENTE";
 
   const isActive = (path: string) => {
       return pathname === path || pathname.startsWith(path + '/');
@@ -65,47 +67,53 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
+          <SidebarGroupLabel>{isStaff ? "Plataforma" : "Mi Portal"}</SidebarGroupLabel>
           <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === "/"}>
-                    <Link href="/">
-                        <LayoutDashboard />
-                        <span>Dashboard</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            {isStaff && (
+              <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === "/"}>
+                      <Link href="/">
+                          <LayoutDashboard />
+                          <span>Dashboard</span>
+                      </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname.startsWith("/tickets")}>
                     <Link href="/tickets">
                         <Ticket />
-                        <span>Tickets</span>
+                        <span>{isStaff ? "Tickets" : "Mis Tickets"}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/asignaciones")}>
-                    <Link href="/asignaciones">
-                        <BookOpen />
-                        <span>Asignaciones</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            {isStaff && (
+              <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/asignaciones")}>
+                      <Link href="/asignaciones">
+                          <BookOpen />
+                          <span>Asignaciones</span>
+                      </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroup>
-        <SidebarGroup>
-           <SidebarGroupLabel>Ecosistema</SidebarGroupLabel>
-           <SidebarMenu>
-             <SidebarMenuItem>
-               <SidebarMenuButton asChild>
-                 <a href={process.env.NEXT_PUBLIC_NEBULA_ASSETS_URL || "#"} target="_blank" rel="noopener noreferrer">
-                   <ExternalLink />
-                   <span>Nebula Assets</span>
-                 </a>
-               </SidebarMenuButton>
-             </SidebarMenuItem>
-           </SidebarMenu>
-        </SidebarGroup>
+        {isStaff && (
+          <SidebarGroup>
+             <SidebarGroupLabel>Ecosistema</SidebarGroupLabel>
+             <SidebarMenu>
+               <SidebarMenuItem>
+                 <SidebarMenuButton asChild>
+                   <a href={process.env.NEXT_PUBLIC_NEBULA_ASSETS_URL || "#"} target="_blank" rel="noopener noreferrer">
+                     <ExternalLink />
+                     <span>Nebula Assets</span>
+                   </a>
+                 </SidebarMenuButton>
+               </SidebarMenuItem>
+             </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

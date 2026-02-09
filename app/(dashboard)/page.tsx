@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Ticket, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import prisma from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
@@ -74,6 +75,12 @@ async function getDashboardData() {
 }
 
 export default async function Page() {
+  // Redirigir usuarios que no son admin/agente a la vista de tickets
+  const session = await auth()
+  if (session?.user?.role !== "ADMIN" && session?.user?.role !== "AGENTE") {
+    redirect("/tickets")
+  }
+
   const data = await getDashboardData()
 
   if (!data) return <div>No autorizado</div>
