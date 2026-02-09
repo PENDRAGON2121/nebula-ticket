@@ -28,11 +28,13 @@ export type TicketWithRelations = {
     image: string | null
     email: string
   } | null
+  asignadoAId: string | null
   creadoPor: {
     name: string | null
     image: string | null
   } | null
   createdAt: Date
+  onDelete?: (id: string) => void
 }
 
 export const columns: ColumnDef<TicketWithRelations & { isMine?: boolean; canEdit?: boolean; canDelete?: boolean; createdAt: Date }>[] = [
@@ -59,13 +61,14 @@ export const columns: ColumnDef<TicketWithRelations & { isMine?: boolean; canEdi
       let variant: "default" | "secondary" | "destructive" | "outline" = "outline"
       
       switch (status) {
-        case "ABIERTO": variant = "default"; break; // Black
-        case "EN_PROGRESO": variant = "secondary"; break; // Gray
-        case "RESUELTO": variant = "outline"; break; // White/Border
-        case "CRITICA": variant = "destructive"; break; // Red
+        case "ABIERTO": variant = "default"; break
+        case "EN_PROGRESO": variant = "secondary"; break
+        case "ESPERA_CLIENTE": variant = "destructive"; break
+        case "RESUELTO": variant = "outline"; break
+        case "CERRADO": variant = "outline"; break
       }
 
-      return <Badge variant={variant}>{status.replace("_", " ")}</Badge>
+      return <Badge variant={variant}>{status.replaceAll("_", " ")}</Badge>
     },
   },
   {
@@ -127,12 +130,21 @@ export const columns: ColumnDef<TicketWithRelations & { isMine?: boolean; canEdi
                 </Link>
             </DropdownMenuItem>
             {ticket.canEdit && (
-              <DropdownMenuItem>
-                <Pencil className="mr-2 h-4 w-4" />Editar
+              <DropdownMenuItem asChild>
+                <Link href={`/tickets/${ticket.id}`}>
+                  <Pencil className="mr-2 h-4 w-4" />Editar
+                </Link>
               </DropdownMenuItem>
             )}
             {ticket.canDelete && (
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => {
+                  if (confirm("¿Seguro que deseas eliminar este ticket?")) {
+                    ticket.onDelete?.(ticket.id)
+                  }
+                }}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />Eliminar
               </DropdownMenuItem>
             )}

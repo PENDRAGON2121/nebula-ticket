@@ -10,9 +10,10 @@ import { addComment } from "@/app/actions/ticket-details"
 
 interface CommentFormProps {
   ticketId: string
+  canViewInternal?: boolean
 }
 
-export function CommentForm({ ticketId }: CommentFormProps) {
+export function CommentForm({ ticketId, canViewInternal = false }: CommentFormProps) {
   const [content, setContent] = React.useState("")
   const [interno, setInterno] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
@@ -45,14 +46,18 @@ export function CommentForm({ ticketId }: CommentFormProps) {
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="interno" 
-            checked={interno} 
-            onCheckedChange={(checked) => setInterno(checked as boolean)}
-          />
-          <Label htmlFor="interno" className="text-sm text-muted-foreground">
-            Nota interna (visible solo para técnicos)
-          </Label>
+          {canViewInternal && (
+            <>
+              <Checkbox
+                id="interno"
+                checked={interno}
+                onCheckedChange={(checked) => setInterno(checked as boolean)}
+              />
+              <Label htmlFor="interno" className="text-sm text-muted-foreground">
+                Nota interna (visible solo para técnicos)
+              </Label>
+            </>
+          )}
         </div>
         <Button type="submit" size="sm" disabled={loading || !content.trim()}>
           <SendHorizontal className="mr-2 h-4 w-4" />

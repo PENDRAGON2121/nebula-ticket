@@ -8,23 +8,17 @@ export const authConfig = {
     // Logic to hydrate session in Middleware (Edge compatible)
     async jwt({ token, user }) {
       if (user) {
-        // @ts-ignore
-        token.role = user.role;
-        // @ts-ignore
-        token.permissions = user.permissions || [];
-        // @ts-ignore
+        token.role = user.role ?? '';
+        token.permissions = user.permissions ?? [];
         token.id = user.id as string;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        // @ts-ignore
-        session.user.role = token.role as string;
-        // @ts-ignore
-        session.user.permissions = token.permissions as string[];
-        // @ts-ignore
-        session.user.id = token.id as string;
+        session.user.role = token.role;
+        session.user.permissions = token.permissions;
+        session.user.id = token.id;
       }
       return session;
     },

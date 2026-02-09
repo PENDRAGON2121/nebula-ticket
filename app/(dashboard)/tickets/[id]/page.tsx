@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,7 +12,7 @@ import { CommentForm } from "@/components/tickets/comment-form"
 import { TicketStatusSelector, TicketPrioritySelector } from "@/components/tickets/ticket-controls"
 import { Laptop, User, Calendar, AlertCircle } from "lucide-react"
 import { getTicketHistory } from "@/app/actions/ticket-history"
-import { canEditTicket, canDeleteTicket, canViewInternalComments } from "@/lib/permissions"
+import { canEditTicket, canDeleteTicket, canViewInternalComments, canViewAllTickets } from "@/lib/permissions"
 import { TicketHistory } from "@/components/tickets/ticket-history"
 
 interface TicketPageProps {
@@ -21,8 +22,11 @@ interface TicketPageProps {
 }
 
 async function getTicket(id: string) {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
   const ticket = await prisma.ticket.findUnique({
-    where: { id },
+    where: { id, deletedAt: null },
     include: {
       activo: true,
       creadoPor: true,
@@ -39,6 +43,13 @@ async function getTicket(id: string) {
   })
 
   if (!ticket) return null
+
+  // Verificar permisos: admin/agente ven todos, usuario solo los suyos
+  const isAdminOrAgent = await canViewAllTickets()
+  if (!isAdminOrAgent && ticket.creadoPorId !== session.user.id) {
+    return null // Dispara notFound()
+  }
+
   return ticket
 }
 
@@ -93,7 +104,7 @@ export default async function TicketDetailPage({ params }: TicketPageProps) {
           <CardContent>
             <CommentList comments={ticket.comentarios} canViewInternal={canViewInternal} />
             <Separator className="my-6" />
-            <CommentForm ticketId={ticket.id} />
+            <CommentForm ticketId={ticket.id} canViewInternal={canViewInternal} />
             <Separator className="my-6" />
             <TicketHistory history={historyForComponent} />
           </CardContent>

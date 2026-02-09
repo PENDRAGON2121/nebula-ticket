@@ -40,7 +40,7 @@ export async function createTicket(prevState: any, formData: FormData) {
       data: {
         titulo,
         descripcion,
-        prioridad: prioridad as any, // Prisma enum casting
+        prioridad,
         status: "ABIERTO",
         creadoPorId: session.user.id,
         activoId: activoId,

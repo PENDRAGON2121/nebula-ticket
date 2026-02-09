@@ -4,11 +4,26 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { DataTableClient } from "./data-table-client"
+import { getTickets } from "@/app/actions/tickets"
+import { auth } from "@/lib/auth"
+import { canEditTicket, canDeleteTicket } from "@/lib/permissions"
 
 export default async function TicketsPage() {
-  // Obtener datos del backend
-  // (En producción, los filtros se pueden pasar por searchParams)
-  const data = await fetchTicketsFromServer()
+  const [session, tickets, canEdit, canDelete] = await Promise.all([
+    auth(),
+    getTickets({}),
+    canEditTicket(),
+    canDeleteTicket(),
+  ])
+
+  // Enriquecer datos con flags de permisos y asignacion
+  const data = tickets.map((ticket) => ({
+    ...ticket,
+    isMine: ticket.asignadoAId === session?.user?.id,
+    canEdit,
+    canDelete,
+  }))
+
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center justify-between">
@@ -38,12 +53,4 @@ export default async function TicketsPage() {
       </Card>
     </div>
   )
-}
-
-async function fetchTicketsFromServer() {
-  // Aquí deberías llamar a tu action getTickets o similar
-  // Ejemplo:
-  // return await getTickets({ ... })
-  // Por ahora, retorna un array vacío para evitar errores
-  return []
 }
